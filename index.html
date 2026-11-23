@@ -1,195 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oleg 20 - Maison Birthday</title>
-  <link rel="preconnect" href="https://images.unsplash.com">
-  <link rel="preconnect" href="https://upload.wikimedia.org">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>ASTO — автосервис полного цикла в Алматы</title>
+  <meta name="description" content="ASTO — автосервис в Алматы: диагностика, замена деталей, тормоза и шины, кузов и покраска. Концепт для портфолио." />
+  <meta name="theme-color" content="#050a14" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23050a14'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' fill='%23ff7a1a' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=4" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
-  <canvas id="confetti" aria-hidden="true"></canvas>
-  <div class="grain" aria-hidden="true"></div>
-
-  <div class="loader" id="loader">
-    <div class="loader-mark">
-      <span>O</span>
-      <small>20</small>
-    </div>
+  <!-- R5: загрузка -->
+  <div class="loader" id="loader" role="status" aria-live="polite">
+    <p class="loader__logo">ASTO</p>
+    <p class="loader__label">Загоняем машину в бокс <b id="loader-pct">0</b>%</p>
+    <span class="loader__bar"><i id="loader-bar"></i></span>
   </div>
 
-  <header class="site-header" id="siteHeader">
-    <a class="brand" href="#top" aria-label="В начало">Maison Oleg</a>
-    <nav class="nav" aria-label="Навигация">
-      <a href="#story">12 лет</a>
-      <a href="#wishes">Пожелания</a>
-      <a href="#garage">Гараж мечты</a>
-      <a href="#letter">Финал</a>
+  <!-- R1: 3D-бокс -->
+  <div class="scene" id="scene" aria-hidden="true">
+    <canvas id="gl"></canvas>
+    <p class="scene__fallback" id="scene-fallback">3D недоступно на этом устройстве</p>
+  </div>
+
+  <header class="top">
+    <a class="logo" href="#top">ASTO</a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#journey">Услуги</a>
+      <a href="#engine">Двигатель</a>
+      <a href="#prices">Прайс</a>
+      <a href="#steps">Как работаем</a>
+      <a href="#book">Отзывы</a>
     </nav>
+    <a class="btn btn--small" href="#book">Записаться</a>
   </header>
 
+  <!-- R3, R4 -->
+  <div class="hud" id="hud">
+    <ol class="chapters" id="chapters" aria-label="Главы">
+      <li><button type="button" data-chapter="0"><span>Старт</span></button></li>
+      <li><button type="button" data-chapter="1"><span>Диагностика</span></button></li>
+      <li><button type="button" data-chapter="2"><span>Замена деталей</span></button></li>
+      <li><button type="button" data-chapter="3"><span>Тормоза и шины</span></button></li>
+      <li><button type="button" data-chapter="4"><span>Кузов и покраска</span></button></li>
+    </ol>
+
+    <article class="card" data-card="1">
+      <p class="card__num">01 / 04</p>
+      <h3>Компьютерная диагностика</h3>
+      <p>Сканируем все системы и просвечиваем машину: находим неисправность до того, как она станет дорогой.</p>
+      <dl><div><dt>Срок</dt><dd>1 час</dd></div><div><dt>Цена</dt><dd>от 30 €</dd></div></dl>
+    </article>
+    <article class="card" data-card="2">
+      <p class="card__num">02 / 04</p>
+      <h3>Замена деталей</h3>
+      <p>Меняем изношенное на новое: оригинал или проверенные аналоги, с гарантией на работу и запчасти.</p>
+      <dl><div><dt>Срок</dt><dd>от 1 дня</dd></div><div><dt>Работа</dt><dd>от 50 €</dd></div></dl>
+    </article>
+    <article class="card" data-card="3">
+      <p class="card__num">03 / 04</p>
+      <h3>Тормоза и шины</h3>
+      <p>Диски, колодки, суппорты, шиномонтаж и балансировка. Машина снова уверенно тормозит.</p>
+      <dl><div><dt>Срок</dt><dd>2–3 часа</dd></div><div><dt>Цена</dt><dd>от 40 €</dd></div></dl>
+    </article>
+    <article class="card" data-card="4">
+      <p class="card__num">04 / 04</p>
+      <h3>Кузов и покраска</h3>
+      <p>Рихтовка, локальный ремонт и полная покраска в камере. Цвет подбираем по коду завода.</p>
+      <dl><div><dt>Срок</dt><dd>3–5 дней</dd></div><div><dt>Цена</dt><dd>от 300 €</dd></div></dl>
+    </article>
+  </div>
+
   <main>
-    <section class="hero" id="top">
-      <div class="hero-media" data-parallax>
-        <img
-          src="https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1800&q=85"
-          alt="Черный спортивный автомобиль в роскошной подаче"
-        >
-      </div>
-      <div class="hero-shade"></div>
-      <div class="hero-content">
-        <p class="kicker">Private birthday edition</p>
-        <h1>Олегу 20</h1>
-        <p class="hero-copy">12 лет дружбы. Новый возраст. Новый уровень. Пусть жизнь выглядит дорого не только снаружи, но и внутри: спокойно, уверенно, красиво.</p>
-        <button class="primary-action" id="celebrateButton" type="button">Открыть поздравление</button>
-      </div>
-      <div class="stripe-panel" aria-hidden="true">
-        <span></span><span></span><span></span>
-      </div>
-    </section>
-
-    <section class="intro section-light" id="story">
-      <div class="section-head reveal">
-        <p class="kicker dark">Friendship house</p>
-        <h2>Двенадцать лет - это уже история</h2>
-      </div>
-      <div class="intro-grid">
-        <div class="intro-text reveal">
-          <p>Олег, за эти годы было столько моментов, что это уже не просто дружба, а свой закрытый клуб: свои шутки, свои воспоминания, свое понимание без лишних объяснений.</p>
-          <p>В 20 хочется пожелать тебе не случайного успеха, а настоящей базы: здоровья, денег, силы, любви, уважения и людей рядом, которые не меняются от обстоятельств.</p>
-        </div>
-        <div class="numbers reveal">
-          <div><strong data-count="12">0</strong><span>лет дружбы</span></div>
-          <div><strong data-count="20">0</strong><span>лет Олегу</span></div>
-          <div><strong data-count="100">0</strong><span>процентов братского уважения</span></div>
+    <!-- R2: пролёт -->
+    <section class="journey" id="journey">
+      <div class="hero" id="top">
+        <p class="eyebrow" data-reveal>Автосервис · Алматы</p>
+        <h1 class="hero__title" data-reveal>ASTO</h1>
+        <p class="hero__sub" data-reveal>Автосервис полного цикла <span>от диагностики до покраски</span></p>
+        <div class="hero__actions" data-reveal>
+          <a class="btn" href="#book">Записаться</a>
+          <span class="hero__hint">Листайте — разберём машину</span>
         </div>
       </div>
     </section>
 
-    <section class="campaign">
-      <div class="campaign-copy reveal">
-        <p class="kicker">Luxury birthday campaign</p>
-        <h2>С днем рождения, Олег</h2>
-        <p>Пусть твой следующий год будет как хороший люксовый дом: без суеты, с характером, с качеством в деталях и с ощущением, что ты на своем месте.</p>
-      </div>
-      <figure class="campaign-photo reveal">
-        <img
-          src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1600&q=85"
-          alt="Черный люксовый спорткар"
-        >
-      </figure>
-    </section>
+    <div class="after">
+      <!-- R10: разбор двигателя -->
+      <section class="engine" id="engine">
+        <div class="engine__pin">
+          <div class="engine__text">
+            <p class="eyebrow">Разбор двигателя</p>
+            <h2 class="engine__title" data-split>Знаем мотор до винтика</h2>
+            <ol class="engine__parts" id="engine-parts">
+              <li data-part="0"><span class="engine__num">01</span><div><b>Клапанная крышка и распредвалы</b><small>Прокладка крышки, сальники распредвалов · от 60 €</small></div></li>
+              <li data-part="1"><span class="engine__num">02</span><div><b>Головка блока</b><small>Прокладка ГБЦ, притирка клапанов · от 220 €</small></div></li>
+              <li data-part="2"><span class="engine__num">03</span><div><b>Впуск, выпуск и турбина</b><small>Ремонт и замена турбины · от 350 €</small></div></li>
+              <li data-part="3"><span class="engine__num">04</span><div><b>Поршни и шатуны</b><small>Замена поршневых колец · от 400 €</small></div></li>
+              <li data-part="4"><span class="engine__num">05</span><div><b>Коленвал и поддон</b><small>Вкладыши, прокладка поддона · от 300 €</small></div></li>
+              <li data-part="5"><span class="engine__num">06</span><div><b>Ремень ГРМ и шкивы</b><small>Замена ремня, роликов и помпы · от 150 €</small></div></li>
+            </ol>
+          </div>
+          <div class="engine__stage">
+            <canvas id="engine-gl" aria-label="3D-модель двигателя, который разбирается по узлам"></canvas>
+            <p class="engine__status" id="engine-status">Двигатель в сборе</p>
+          </div>
+        </div>
+      </section>
 
-    <section class="wishes" id="wishes">
-      <div class="section-head reveal">
-        <p class="kicker">The birthday collection</p>
-        <h2>Пожелания как коллекция</h2>
-      </div>
-      <div class="wish-list">
-        <article class="wish-row reveal">
-          <span>01</span>
-          <h3>Здоровья</h3>
-          <p>Чтобы сил хватало на планы, работу, спорт, дороги, поздние вечера и большие цели.</p>
-        </article>
-        <article class="wish-row reveal">
-          <span>02</span>
-          <h3>Денег</h3>
-          <p>Не просто “чтобы хватало”, а чтобы выбирать, путешествовать, помогать своим и жить шире.</p>
-        </article>
-        <article class="wish-row reveal">
-          <span>03</span>
-          <h3>Любви</h3>
-          <p>Настоящей, спокойной, красивой, где есть уважение, тепло и желание становиться лучше.</p>
-        </article>
-        <article class="wish-row reveal">
-          <span>04</span>
-          <h3>Статуса</h3>
-          <p>Чтобы тебя уважали не за шум, а за поступки, характер, слово и уверенность.</p>
-        </article>
-        <article class="wish-row reveal">
-          <span>05</span>
-          <h3>Удачи</h3>
-          <p>Пусть нужные двери открываются вовремя, а случайности работают в твою сторону.</p>
-        </article>
-      </div>
-    </section>
+      <!-- R11: бегущая строка марок -->
+      <div class="marquee" aria-hidden="true"><div class="marquee__track" data-marquee>Toyota ✦ Hyundai ✦ Kia ✦ Lexus ✦ BMW ✦ Mercedes-Benz ✦ Volkswagen ✦ Chevrolet ✦ Nissan ✦ Audi ✦ Mitsubishi ✦ Haval ✦&nbsp;</div></div>
 
-    <section class="garage section-light" id="garage">
-      <div class="section-head reveal">
-        <p class="kicker dark">Dream garage</p>
-        <h2>Гараж, который звучит как цель</h2>
-      </div>
-      <div class="garage-grid">
-        <figure class="car-card large reveal">
-          <img
-            src="https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=1500&q=85"
-            alt="Роскошный суперкар в темном стиле"
-          >
-          <figcaption>
-            <small>Wish 01</small>
-            <strong>Bugatti level</strong>
-            <span>Желаю тебе машину такого уровня, чтобы одна парковка уже выглядела как событие.</span>
-          </figcaption>
-        </figure>
-
-        <figure class="car-card reveal">
-          <img
-            src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=85"
-            alt="Яркий дорогой спорткар"
-          >
-          <figcaption>
-            <small>Wish 02</small>
-            <strong>Veyron energy</strong>
-            <span>Энергия гиперкара: не кричит, а просто стоит дороже большинства мечт.</span>
-          </figcaption>
-        </figure>
-
-        <figure class="car-card reveal">
-          <img
-            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=85"
-            alt="Дорогой спортивный автомобиль на дороге"
-          >
-          <figcaption>
-            <small>Wish 03</small>
-            <strong>Night drive</strong>
-            <span>Пусть у тебя будут дороги, где впереди только свет, скорость и свои люди рядом.</span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section class="editorial">
-      <div class="editorial-media reveal">
-        <img
-          src="https://images.unsplash.com/photo-1519867850-74775a87e783?auto=format&fit=crop&w=1400&q=85"
-          alt="Роскошный интерьер с классической атмосферой"
-        >
-      </div>
-      <div class="editorial-copy reveal">
-        <p class="kicker">Old money code</p>
-        <h2>Дорого - это когда спокойно</h2>
-        <p>Желаю тебе того самого уровня, где не надо никому ничего доказывать. Где есть вкус, дисциплина, уверенность, деньги, близкие люди и свобода делать так, как считаешь правильным.</p>
-        <ul>
-          <li>Сильный характер без лишнего шума</li>
-          <li>Большие планы без страха начать</li>
-          <li>Свои люди рядом в любой сезон</li>
-          <li>Стиль, который видно даже в мелочах</li>
+      <!-- R6: прайс -->
+      <section class="section" id="prices">
+        <div class="section__head">
+          <p class="eyebrow" data-reveal>Прайс</p>
+          <h2 data-reveal>Популярные работы</h2>
+        </div>
+        <ul class="pricelist glass">
+          <li data-reveal><span>Замена масла и фильтра</span><small>30 минут</small><b>25 €</b></li>
+          <li data-reveal><span>Замена тормозных колодок</span><small>1 час, ось</small><b>40 €</b></li>
+          <li data-reveal><span>Замена амортизаторов</span><small>2 часа, пара</small><b>80 €</b></li>
+          <li data-reveal><span>Замена ремня ГРМ</span><small>4–6 часов</small><b>150 €</b></li>
+          <li data-reveal><span>Шиномонтаж и балансировка</span><small>40 минут, 4 колеса</small><b>30 €</b></li>
+          <li data-reveal><span>Развал-схождение</span><small>1 час</small><b>35 €</b></li>
         </ul>
-      </div>
-    </section>
+        <p class="price-note" data-reveal>Цена работы без запчастей. Точную сумму назовём после диагностики.</p>
+      </section>
 
-    <section class="letter section-light" id="letter">
-      <div class="letter-box reveal">
-        <p class="kicker dark">Final toast</p>
-        <h2>Олег, с двадцатилетием</h2>
-        <p>Пусть эта дата станет началом большого этапа. Желаю тебе здоровья, денег, красивой жизни, настоящей любви, сильной семьи, верных друзей и той самой уверенности, когда ты знаешь: все, что ты хочешь, реально.</p>
-        <p>Спасибо за 12 лет дружбы. Дальше - больше, дороже, сильнее и красивее.</p>
-        <button class="primary-action dark-action" id="finalButton" type="button">За Олега</button>
-      </div>
-    </section>
+      <!-- R11: счётчики -->
+      <section class="stats">
+        <div class="stat glass" data-reveal><b data-count="12">12</b><span>лет ремонтируем машины</span></div>
+        <div class="stat glass" data-reveal><b data-count="8400">8 400</b><span>машин в год проходят через бокс</span></div>
+        <div class="stat glass" data-reveal><b data-count="4.9" data-decimals="1">4,9</b><span>средняя оценка в 2ГИС</span></div>
+      </section>
+
+      <!-- R6: как работаем -->
+      <section class="section" id="steps">
+        <div class="section__head">
+          <p class="eyebrow" data-reveal>Процесс</p>
+          <h2 data-reveal>Как мы работаем</h2>
+        </div>
+        <ol class="steps">
+          <li class="step" data-step><span class="step__num">01</span><h3>Заявка</h3><p>Пишете в WhatsApp, выбираем время.</p></li>
+          <li class="step" data-step><span class="step__num">02</span><h3>Диагностика</h3><p>Находим причину и согласуем смету до начала работ.</p></li>
+          <li class="step" data-step><span class="step__num">03</span><h3>Ремонт</h3><p>Меняем детали, присылаем фото старых и новых.</p></li>
+          <li class="step" data-step><span class="step__num">04</span><h3>Выдача</h3><p>Тест-драйв с мастером и гарантия на работу.</p></li>
+        </ol>
+      </section>
+
+      <div class="marquee marquee--alt" aria-hidden="true"><div class="marquee__track" data-marquee data-dir="-1">Диагностика ✦ Ходовая ✦ Двигатель ✦ Тормоза ✦ Шиномонтаж ✦ Кузов ✦ Покраска ✦ Электрика ✦ Кондиционер ✦&nbsp;</div></div>
+
+      <!-- R6: отзывы и запись -->
+      <section class="section" id="book">
+        <div class="section__head">
+          <p class="eyebrow" data-reveal>Отзывы</p>
+          <h2 data-reveal>Нам доверяют ремонт</h2>
+        </div>
+        <div class="reviews">
+          <blockquote class="review glass" data-reveal><p>«Нашли проблему с подвеской, которую в двух сервисах не видели. Показали старые детали».</p><footer>Данияр · Hyundai Tucson</footer></blockquote>
+          <blockquote class="review glass" data-reveal><p>«Поменяли колодки и диски за два часа, пока я работал в кафе рядом».</p><footer>Алия · Toyota RAV4</footer></blockquote>
+          <blockquote class="review glass" data-reveal><p>«Покрасили бампер и крыло — цвет не отличить от родного».</p><footer>Руслан · Kia K5</footer></blockquote>
+        </div>
+        <div class="cta" data-reveal>
+          <h2 class="cta__title">Запишите машину <span>на ремонт</span></h2>
+          <p>Ответим в течение 15 минут, с 8:00 до 22:00.</p>
+          <a class="btn btn--wa" id="wa-link" href="https://wa.me/77000000000?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%B2%20ASTO%20%D0%BD%D0%B0%20%D1%80%D0%B5%D0%BC%D0%BE%D0%BD%D1%82." target="_blank" rel="noopener">Записаться в WhatsApp</a>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <div>
+          <p class="logo">ASTO</p>
+          <p>Алматы, ул. Примерная, 34 (адрес-заглушка)</p>
+          <p>Ежедневно 8:00–22:00</p>
+        </div>
+        <div class="foot__credits">
+          <p>3D-модель Ferrari 458 Italia — <a href="https://sketchfab.com/models/57bf6cc56931426e87494f554df1dab6" target="_blank" rel="noopener">vicent091036</a> (Sketchfab), из примеров three.js. Модель двигателя «<a href="https://sketchfab.com/3d-models/four-cylinder-engine-b06ecbd3c1a641b6bd5fdc3c30d7c588" target="_blank" rel="noopener">Four Cylinder Engine</a>» — ChinmaySingh (Sketchfab), лицензия CC BY 4.0.</p>
+          <p>Концепт для портфолио · автосервис выдуманный, контакты — заглушки.</p>
+        </div>
+      </footer>
+    </div>
   </main>
 
-  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
+  <script type="module" src="main.js?v=6"></script>
 </body>
 </html>
