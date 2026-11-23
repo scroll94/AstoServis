@@ -239,11 +239,15 @@ async function initScene(canvas, onProgress) {
     s.layers.set(1) // слой 1 видит только основная камера: в зеркале пола софтбоксы не отражаются и не лезут под текст
     scene.add(s)
   })
+  // полосы длинные и уходят в туман: раньше их торец оказывался у камеры на телефоне и рисовался огромным «обрубком»
   const redMat = glowMat(0xff2d3d, 2.2)
-  ;[-3.3, 3.3].forEach((x) => {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 10), redMat)
+  redMat.fog = true
+  // на узком экране камера отъезжает далеко и пролетает прямо над полосами — там их не показываем
+  const bars = [-7, 7].map((x) => {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 60), redMat)
     bar.position.set(x, 0.015, 0)
     scene.add(bar)
+    return bar
   })
   const redLight = new THREE.PointLight(0xff2d3d, 6, 9, 1.6)
   redLight.position.set(0, 0.4, 0)
@@ -343,6 +347,54 @@ async function initScene(canvas, onProgress) {
   const steer = new THREE.Vector3()
   car.getObjectByName('steering_wheel').getWorldPosition(steer)
 
+  // центральная консоль: в модели под блоком климата пустая дыра до пола — ставим наклонный карбоновый «мост» с кнопками, как у Ferrari 458
+  {
+    const A = new THREE.Vector3(0, 0.555, -0.53 * -F), B = new THREE.Vector3(0, 0.42, -0.36 * -F)
+    const len = A.distanceTo(B)
+    const bridge = new THREE.Group()
+    bridge.position.copy(A).add(B).multiplyScalar(0.5)
+    bridge.lookAt(B)
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, len + 0.04), new THREE.MeshPhysicalMaterial({ color: 0x141518, metalness: 0.4, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.15 }))
+    bridge.add(slab)
+    const btnMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1d, metalness: 0.6, roughness: 0.3 })
+    const capRed = new THREE.MeshBasicMaterial({ color: 0xff2d3d, toneMapped: false })
+    const capWhite = new THREE.MeshBasicMaterial({ color: 0xe9e9ee, toneMapped: false })
+    ;[[-0.05, -0.04, capWhite], [0, -0.04, capRed], [0.05, -0.04, capWhite], [-0.05, 0.03, capWhite], [0, 0.03, capWhite], [0.05, 0.03, capWhite]].forEach(([x, z, cap]) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.012, 0.024), btnMat)
+      b.position.set(x, 0.016, z)
+      bridge.add(b)
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.02, 0.003), cap)
+      l.rotation.x = -Math.PI / 2
+      l.position.set(x, 0.0225, z)
+      bridge.add(l)
+    })
+    // боковины и низ — закрывают щель до пола
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.26), new THREE.MeshStandardMaterial({ color: 0x1b1c1f, roughness: 0.6 }))
+    lower.position.set(0, 0.33, -0.5 * -F)
+    scene.add(bridge, lower)
+  }
+
+  // подкрылки: в арках модели дыры и щели — закрываем тёмным пластиковым подкрылком и глухой стенкой изнутри
+  const linerMat = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.85, metalness: 0, side: THREE.DoubleSide })
+  wheels.forEach((w, i) => {
+    const b = new THREE.Box3().setFromObject(w)
+    const c = b.getCenter(new THREE.Vector3())
+    const sz = b.getSize(new THREE.Vector3())
+    const r = Math.max(sz.y, sz.z) / 2
+    const width = sz.x
+    const arc = new THREE.CylinderGeometry(r * 1.13, r * 1.13, width * 1.25, 40, 1, true, -0.2, Math.PI + 0.4)
+    arc.rotateZ(Math.PI / 2)
+    const liner = new THREE.Mesh(arc, linerMat)
+    liner.position.copy(c)
+    liner.position.x -= wheelSide[i] * width * 0.12
+    scene.add(liner)
+    const wall = new THREE.Mesh(new THREE.CircleGeometry(r * 1.13, 40, -0.2, Math.PI + 0.4), linerMat)
+    wall.geometry.rotateY(Math.PI / 2) // плоскость стоит вдоль оси машины
+    wall.position.copy(c)
+    wall.position.x -= wheelSide[i] * width * 0.72
+    scene.add(wall)
+  })
+
   // ── салон как в настоящих машинах
   // материал «карбон» в модели без текстуры и рисовался светлым кольцом за рулём («второй руль») — делаем тёмный глянцевый карбон
   const carbon = new THREE.MeshPhysicalMaterial({ color: 0x141518, metalness: 0.4, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.15 })
@@ -412,6 +464,7 @@ async function initScene(canvas, onProgress) {
     composer.setPixelRatio(renderer.getPixelRatio())
     composer.setSize(W, H)
     camera.aspect = W / H
+    bars.forEach((b) => { b.visible = camera.aspect >= 1 })
     baseFov = camera.aspect < 1 ? mix(36, 52, clamp01((1 - camera.aspect) / 0.5)) : 36 // вертикальный экран — шире объектив
     camera.updateProjectionMatrix()
     floor.getRenderTarget().setSize(W * reflScale * renderer.getPixelRatio(), H * reflScale * renderer.getPixelRatio())
