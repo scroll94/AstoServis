@@ -460,6 +460,10 @@ async function initScene(canvas, onProgress) {
     cut('yellow_trim', (p) => p.z * F > 1.8) // жёлтый квадратик
     cut('chrome', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07) // хромовая рамка под ним
     cut('interior_dark', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07)
+    // эмблема с решётки бампера — убираем (знак остаётся один, на носу капота)
+    cut('chrome', (p) => Math.abs(p.x) < 0.05 && p.y > 0.23 && p.y < 0.35 && p.z * F > 2.15)
+    cut('interior_dark', (p) => Math.abs(p.x) < 0.03 && p.y > 0.25 && p.y < 0.34 && p.z * F > 2.16) // крепёж эмблемы (под ним тёмная панель)
+    let noseSpot = null
     // под квадратиком в кузове дыра — закрываем заплаткой той же краской
     {
       // меряем капот по кольцу вокруг ямки и подбираем гладкую поверхность y = a + bx + cz + dx² + ez² + fxz
@@ -515,6 +519,7 @@ async function initScene(canvas, onProgress) {
         const patch = new THREE.Mesh(geo, paint)
         patch.position.set(cx, 0, cz)
         scene.add(patch)
+        noseSpot = { pos: new THREE.Vector3(cx, surfY(0, 0), cz), n: new THREE.Vector3(-c[1], 1, -c[2]).normalize() }
       }
     }
     // щиток рисуем на canvas: жёлтое поле, триколор сверху, тёмная окантовка
@@ -536,17 +541,15 @@ async function initScene(canvas, onProgress) {
     const tex = new THREE.CanvasTexture(c)
     tex.colorSpace = THREE.SRGBColorSpace
     tex.anisotropy = 8
-    const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.088, 0.11), new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.5, metalness: 0.3, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05, polygonOffset: true, polygonOffsetFactor: -4 }))
-    // ставим на поверхность капота: ищем точку и нормаль лучом сверху
-    const ray = new THREE.Raycaster(new THREE.Vector3(0, 3, 1.85 * F), new THREE.Vector3(0, -1, 0))
-    const hit = ray.intersectObject(car.getObjectByName('body'), true)[0]
-    if (hit) {
-      const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
+    const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.09), new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.5, metalness: 0.3, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05, polygonOffset: true, polygonOffsetFactor: -4 }))
+    // щиток — на прежнее место знака, на носу капота (поверх заплатки)
+    if (noseSpot) {
+      const n = noseSpot.n
       const back = new THREE.Vector3(0, 0, -F)
       const up = back.sub(n.clone().multiplyScalar(n.dot(back))).normalize()
       const right = up.clone().cross(n)
       badge.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, n))
-      badge.position.copy(hit.point).addScaledVector(n, 0.002)
+      badge.position.copy(noseSpot.pos).addScaledVector(n, 0.003)
       scene.add(badge)
     }
   }
