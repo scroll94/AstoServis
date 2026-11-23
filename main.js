@@ -150,6 +150,29 @@ handle.addEventListener('keydown', (e) => {
   e.preventDefault()
 })
 
+// ── заявка: собираем готовое сообщение и открываем WhatsApp
+const form = $('#book-form')
+if (form) {
+  const err = $('#book-error')
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const f = new FormData(form)
+    const name = String(f.get('name') || '').trim()
+    const car = String(f.get('car') || '').trim()
+    if (!name || !car) { err.hidden = false; form.querySelector(name ? '[name=car]' : '[name=name]').focus(); return }
+    err.hidden = true
+    const date = String(f.get('date') || '')
+    const when = date ? new Date(date + 'T12:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : 'договоримся'
+    const text = `Здравствуйте! Хочу записаться в GLOSS.\nИмя: ${name}\nМашина: ${car}\nУслуга: ${f.get('service') || 'не выбрана'}\nДата: ${when}`
+    window.open('https://wa.me/77000000000?text=' + encodeURIComponent(text), '_blank', 'noopener')
+  })
+  // кнопка «Выбрать пакет» сразу отмечает пакет в заявке
+  document.querySelectorAll('[data-plan]').forEach((a) => a.addEventListener('click', () => {
+    const r = form.querySelector(`input[name=service][value="${a.dataset.plan}"]`)
+    if (r) r.checked = true
+  }))
+}
+
 // ── R5: загрузка
 const loader = $('#loader')
 const pctEl = $('#loader-pct')
@@ -327,7 +350,7 @@ async function initScene(canvas, onProgress) {
   car.getObjectByName('body').material = paint
 
   const metal = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.32 })
-  ;['rim_fl', 'rim_fr', 'rim_rr', 'rim_rl', 'trim'].forEach((n) => { const o = car.getObjectByName(n); if (o) o.material = metal })
+  ;['trim'].forEach((n) => { const o = car.getObjectByName(n); if (o) o.material = metal })
   const glass = new THREE.MeshPhysicalMaterial({ color: 0x111114, metalness: 0.2, roughness: 0, transparent: true, opacity: 0.32, depthWrite: false })
   car.getObjectByName('glass').material = glass
 
@@ -340,6 +363,46 @@ async function initScene(canvas, onProgress) {
   car.add(shadow)
 
   const wheels = ['wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'].map((n) => car.getObjectByName(n))
+  // колёса как у настоящей машины: тёмные кованые диски под лаком, чёрная резина, стальной тормозной диск
+  const rimMat = new THREE.MeshPhysicalMaterial({ color: 0x2a2c31, metalness: 1, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.06 })
+  const barrelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1e, metalness: 0.9, roughness: 0.35 })
+  const discMat = new THREE.MeshStandardMaterial({ color: 0x7a7d83, metalness: 1, roughness: 0.38 })
+  const tireMat = new THREE.MeshStandardMaterial({ color: 0x121214, metalness: 0, roughness: 0.92 })
+  wheels.forEach((w) => w.traverse((o) => {
+    if (!o.isMesh) return
+    if (o.name.startsWith('rim_')) o.material = rimMat
+    else if (/^wheel(_|$)/.test(o.name)) o.material = barrelMat
+    else if (o.name.startsWith('brake')) o.material = discMat
+    else if (o.name.startsWith('tire')) o.material = tireMat
+  }))
+  // жёлтые суппорты: стоят на месте, пока колесо крутится (поворот компенсируем в render)
+  const caliperMat = new THREE.MeshPhysicalMaterial({ color: 0xf0b800, metalness: 0.2, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.1 })
+  const calipers = wheels.map((w) => {
+    w.updateMatrixWorld(true)
+    const b = new THREE.Box3().setFromObject(w)
+    const c = b.getCenter(new THREE.Vector3())
+    const sz = b.getSize(new THREE.Vector3())
+    const r = Math.max(sz.y, sz.z) / 2
+    const side = Math.sign(c.x) || 1
+    const pivot = new THREE.Group()
+    w.add(pivot)
+    pivot.updateMatrixWorld(true)
+    // суппорт — изогнутая скоба вокруг тормозного диска, за спицами
+    const ang = 0.75 // от верха к задней части колеса
+    const th = Math.atan2(Math.cos(ang), F * Math.sin(ang))
+    const r1 = r * 0.4, r2 = r * 0.6, half = 0.36
+    const shape = new THREE.Shape()
+    shape.absarc(0, 0, r2, th - half, th + half, false)
+    shape.absarc(0, 0, r1, th + half, th - half, true)
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.045, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 2, curveSegments: 16 })
+    geo.translate(0, 0, -0.0225)
+    geo.rotateY(Math.PI / 2)
+    const cal = new THREE.Mesh(geo, caliperMat)
+    cal.position.copy(pivot.worldToLocal(new THREE.Vector3(c.x + side * sz.x * 0.03, c.y, c.z)))
+    cal.quaternion.copy(pivot.getWorldQuaternion(new THREE.Quaternion()).invert())
+    pivot.add(cal)
+    return { pivot, r0: w.rotation.x }
+  })
   const wheelBase = wheels.map((w) => w.position.clone())
   const wheelSide = wheels.map((w) => { const p = new THREE.Vector3(); w.getWorldPosition(p); return Math.sign(p.x) || 1 })
   // заднее колесо на стороне камеры (x < 0) и руль — опорные точки камеры
@@ -500,9 +563,7 @@ async function initScene(canvas, onProgress) {
     camera.position.copy(tmpP)
     camera.lookAt(tmpT)
 
-    // кадрирование: на ПК машина правее (карточки слева), на телефоне выше (карточки снизу)
     const wide = camera.aspect >= 1
-    camera.setViewOffset(W, H, wide ? -W * 0.12 * out : 0, wide ? 0 : H * 0.11 * out, W, H)
 
     // эффекты по главам
     U.uBurn.value = smooth(range(u, 0.2, 0.42))
@@ -513,12 +574,25 @@ async function initScene(canvas, onProgress) {
       w.position.copy(wheelBase[i])
       w.position.x += wheelSide[i] * wheelsOut * 0.28 / Math.max(car.scale.x, 1e-6)
       w.rotation.x = -u * 26
+      calipers[i].pivot.rotation.x = calipers[i].r0 - w.rotation.x
     })
     glass.opacity = mix(0.32, 0.12, inside)
     redLight.intensity = (6 + Math.sin(time * 1.4) * 0.8) * (1 - inside * 0.92)
     // в салоне: шире объектив, меньше экспозиция и свечение, иначе кабина пересвечена
     camera.fov = mix(baseFov, 62, inside)
     camera.updateProjectionMatrix()
+    // кадрирование: на ПК машина правее (карточки слева), на телефоне выше (карточки снизу).
+    // Сдвигаем саму камеру, а не окно проекции (setViewOffset ломал зеркальный пол — край отражения растягивался «цилиндром»)
+    {
+      const d = tmpP.distanceTo(tmpT)
+      const halfH = d * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)
+      camera.updateMatrixWorld()
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0)
+      const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1)
+      const shift = wide ? right.multiplyScalar(-0.24 * halfH * camera.aspect * out) : up.multiplyScalar(-0.22 * halfH * out)
+      camera.position.add(shift)
+      camera.updateMatrixWorld()
+    }
     renderer.toneMappingExposure = mix(1.05, 0.85, inside)
     bloom.strength = mix(0.42, 0.15, inside)
     scene.environmentIntensity = mix(0.9, 0.75, inside)
@@ -536,6 +610,6 @@ async function initScene(canvas, onProgress) {
   render(journeyU(), 0, 0.016, { x: 0, y: 0 })
   if (renderer.compileAsync) await renderer.compileAsync(scene, camera)
   onProgress(1)
-  window.__gloss = { renderer, camera, scene, car }
+  window.__gloss = { renderer, camera, scene, car, render }
   return { render }
 }

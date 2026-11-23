@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <script type="importmap">
     {
       "imports": {
@@ -105,13 +105,14 @@
           <p class="section__note" data-reveal>Потяните ползунок, чтобы сравнить.</p>
         </div>
         <div class="compare" id="compare-box" data-reveal style="--pos: 50%">
-          <img class="compare__img compare__img--after" src="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1600&q=75&auto=format&fit=crop" alt="Чёрный седан после детейлинга: чистый и блестящий" width="1600" height="900" loading="lazy" />
+          <img class="compare__img compare__img--after" src="assets/after.jpg?v=1" alt="Ferrari после полировки и керамики: глубокий красный лак с зеркальным отражением" width="1600" height="900" loading="lazy" />
+          <span class="compare__shine" aria-hidden="true"></span>
           <div class="compare__before" aria-hidden="true">
-            <img class="compare__img compare__img--before" src="https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=1600&q=75&auto=format&fit=crop" alt="" width="1600" height="900" loading="lazy" />
+            <img class="compare__img compare__img--before" src="assets/before.jpg?v=1" alt="" width="1600" height="900" loading="lazy" />
             <span class="compare__dust"></span>
           </div>
-          <span class="compare__tag compare__tag--before">До</span>
-          <span class="compare__tag compare__tag--after">После</span>
+          <span class="compare__tag compare__tag--before">До · тусклый лак</span>
+          <span class="compare__tag compare__tag--after">После · зеркальный блеск</span>
           <div class="compare__handle" id="compare-handle" role="slider" tabindex="0" aria-label="Граница до и после" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
             <span aria-hidden="true">‹ ›</span>
           </div>
@@ -126,24 +127,41 @@
         </div>
         <div class="prices">
           <article class="plan glass" data-reveal>
+            <p class="plan__tag">Освежить</p>
             <h3>Базовый</h3>
-            <p class="plan__price">90 €</p>
-            <ul><li>Двухфазная мойка</li><li>Химчистка салона</li><li>Чернение шин</li><li>Воск на кузов</li></ul>
-            <a class="btn btn--ghost" href="#book">Выбрать</a>
+            <p class="plan__price"><small>от</small> 90 <span>€</span></p>
+            <p class="plan__time">⏱ 4–5 часов</p>
+            <ul><li>Двухфазная мойка кузова</li><li>Химчистка салона</li><li>Чернение шин и пластика</li><li>Защитный воск</li></ul>
+            <a class="btn btn--ghost plan__btn" href="#book" data-plan="Базовый">Выбрать пакет</a>
           </article>
           <article class="plan glass plan--popular" data-reveal>
-            <span class="plan__badge">Популярный</span>
+            <span class="plan__badge">★ Выбирают чаще всего</span>
+            <p class="plan__tag">Как из салона</p>
             <h3>Комфорт</h3>
-            <p class="plan__price">290 €</p>
-            <ul><li>Всё из «Базового»</li><li>Полировка кузова</li><li>Керамика на 1 год</li><li>Антидождь на стёкла</li></ul>
-            <a class="btn" href="#book">Выбрать</a>
+            <p class="plan__price"><small>от</small> 290 <span>€</span></p>
+            <p class="plan__time">⏱ 2 дня</p>
+            <ul><li>Всё из «Базового»</li><li>Полировка кузова в 2 этапа</li><li>Керамика на 1 год</li><li>Антидождь на стёкла</li></ul>
+            <a class="btn plan__btn" href="#book" data-plan="Комфорт">Выбрать пакет</a>
           </article>
           <article class="plan glass" data-reveal>
+            <p class="plan__tag">Максимальная защита</p>
             <h3>Премиум</h3>
-            <p class="plan__price">790 €</p>
-            <ul><li>Всё из «Комфорта»</li><li>Плёнка PPF на перед</li><li>Керамика на 3 года</li><li>Уход за кожей салона</li></ul>
-            <a class="btn btn--ghost" href="#book">Выбрать</a>
+            <p class="plan__price"><small>от</small> 790 <span>€</span></p>
+            <p class="plan__time">⏱ 4–5 дней</p>
+            <ul><li>Всё из «Комфорта»</li><li>Плёнка PPF на перед</li><li>Керамика на 3 года</li><li>Уход и защита кожи</li></ul>
+            <a class="btn btn--ghost plan__btn" href="#book" data-plan="Премиум">Выбрать пакет</a>
           </article>
+        </div>
+        <div class="menu glass" data-reveal>
+          <p class="menu__title">Отдельные услуги</p>
+          <ul class="menu__list">
+            <li><span>Полировка кузова</span><i></i><b>от 120 €</b></li>
+            <li><span>Керамическое покрытие</span><i></i><b>от 240 €</b></li>
+            <li><span>Плёнка PPF, полный перед</span><i></i><b>от 490 €</b></li>
+            <li><span>Химчистка салона</span><i></i><b>от 90 €</b></li>
+            <li><span>Полировка фар</span><i></i><b>от 40 €</b></li>
+            <li><span>Антидождь на все стёкла</span><i></i><b>от 35 €</b></li>
+          </ul>
         </div>
       </section>
 
@@ -173,9 +191,32 @@
           <blockquote class="review glass" data-reveal><p>«Плёнку на перед поставили аккуратно, швов не видно даже вблизи».</p><footer>Ерлан · BMW X5</footer></blockquote>
         </div>
         <div class="cta" data-reveal>
-          <h2 class="cta__title">Запишите машину <span>на блеск</span></h2>
-          <p>Ответим в течение 15 минут, с 9:00 до 21:00.</p>
-          <a class="btn btn--wa" id="wa-link" href="https://wa.me/77000000000?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B0%D1%82%D1%8C%D1%81%D1%8F%20%D0%B2%20GLOSS%20%D0%BD%D0%B0%20%D0%B4%D0%B5%D1%82%D0%B5%D0%B9%D0%BB%D0%B8%D0%BD%D0%B3." target="_blank" rel="noopener">Записаться в WhatsApp</a>
+          <div class="cta__info">
+            <p class="eyebrow">Запись</p>
+            <h2 class="cta__title">Запишите машину <span>на блеск</span></h2>
+            <p>Заполните заявку: она откроется в WhatsApp уже готовым сообщением. Ответим в течение 15 минут, с 9:00 до 21:00.</p>
+            <ul class="cta__perks"><li>Бесплатный осмотр лака при свете</li><li>Точная цена до начала работ</li><li>Фото процесса в WhatsApp</li></ul>
+          </div>
+          <form class="book glass" id="book-form" novalidate>
+            <label class="field"><span>Имя</span><input name="name" autocomplete="given-name" placeholder="Как к вам обращаться" required /></label>
+            <label class="field"><span>Машина</span><input name="car" placeholder="Например, BMW X5" required /></label>
+            <fieldset class="field">
+              <legend>Услуга</legend>
+              <div class="chips">
+                <label><input type="radio" name="service" value="Базовый" /><span>Базовый</span></label>
+                <label><input type="radio" name="service" value="Комфорт" checked /><span>Комфорт</span></label>
+                <label><input type="radio" name="service" value="Премиум" /><span>Премиум</span></label>
+                <label><input type="radio" name="service" value="Полировка" /><span>Полировка</span></label>
+                <label><input type="radio" name="service" value="Керамика" /><span>Керамика</span></label>
+                <label><input type="radio" name="service" value="Плёнка PPF" /><span>Плёнка</span></label>
+                <label><input type="radio" name="service" value="Химчистка" /><span>Химчистка</span></label>
+              </div>
+            </fieldset>
+            <label class="field"><span>Удобная дата</span><input type="date" name="date" /></label>
+            <p class="book__error" id="book-error" role="alert" hidden>Укажите имя и машину.</p>
+            <button class="btn btn--wa book__send" type="submit">Отправить заявку в WhatsApp</button>
+            <a class="book__plain" id="wa-link" href="https://wa.me/77000000000" target="_blank" rel="noopener">или просто написать нам</a>
+          </form>
         </div>
       </section>
 
@@ -187,8 +228,7 @@
         </div>
         <div class="foot__credits">
           <p>3D-модель Ferrari 458 Italia — <a href="https://sketchfab.com/models/57bf6cc56931426e87494f554df1dab6" target="_blank" rel="noopener">vicent091036</a> (Sketchfab), из примеров three.js.</p>
-          <p>Фото: Unsplash.</p>
-          <p>Концепт для портфолио · студия выдуманная, контакты — заглушки.</p>
+                    <p>Концепт для портфолио · студия выдуманная, контакты — заглушки.</p>
         </div>
       </footer>
     </div>
@@ -197,6 +237,6 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
-  <script type="module" src="main.js?v=13"></script>
+  <script type="module" src="main.js?v=20"></script>
 </body>
 </html>
