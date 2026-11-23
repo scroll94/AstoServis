@@ -460,9 +460,6 @@ async function initScene(canvas, onProgress) {
     cut('yellow_trim', (p) => p.z * F > 1.8) // жёлтый квадратик
     cut('chrome', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07) // хромовая рамка под ним
     cut('interior_dark', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07)
-    // эмблема с решётки бампера — убираем (знак остаётся один, на носу капота)
-    cut('chrome', (p) => Math.abs(p.x) < 0.05 && p.y > 0.23 && p.y < 0.35 && p.z * F > 2.15)
-    cut('interior_dark', (p) => Math.abs(p.x) < 0.03 && p.y > 0.25 && p.y < 0.34 && p.z * F > 2.16) // крепёж эмблемы (под ним тёмная панель)
     let noseSpot = null
     // под квадратиком в кузове дыра — закрываем заплаткой той же краской
     {
@@ -526,22 +523,23 @@ async function initScene(canvas, onProgress) {
     const c = document.createElement('canvas')
     c.width = 256; c.height = 320
     const x = c.getContext('2d')
-    const shield = (inset) => {
+    // форма щитка как у Ferrari: ровный верх, прямые бока, низ сходится в острый угол; внутри пусто — жёлтое поле и триколор сверху
+    const shield = (i) => {
       x.beginPath()
-      x.moveTo(20 + inset, 20 + inset); x.lineTo(236 - inset, 20 + inset); x.lineTo(236 - inset, 190 - inset * 0.4)
-      x.quadraticCurveTo(236 - inset, 260 - inset, 128, 304 - inset * 1.4)
-      x.quadraticCurveTo(20 + inset, 260 - inset, 20 + inset, 190 - inset * 0.4); x.closePath()
+      x.moveTo(34 + i, 14 + i); x.lineTo(222 - i, 14 + i); x.lineTo(222 - i, 176)
+      x.bezierCurveTo(222 - i, 236 - i * 0.5, 176 - i * 0.3, 276 - i * 0.6, 128, 306 - i * 1.3)
+      x.bezierCurveTo(80 + i * 0.3, 276 - i * 0.6, 34 + i, 236 - i * 0.5, 34 + i, 176); x.closePath()
     }
-    shield(0); x.fillStyle = '#111114'; x.fill()
-    shield(12); x.save(); x.clip()
-    x.fillStyle = '#f6c400'; x.fillRect(0, 0, 256, 320)
-    ;['#14a04a', '#f4f4f4', '#d81e2c'].forEach((col, i) => { x.fillStyle = col; x.fillRect(32 + i * 64, 32, 64, 34) })
-    x.fillStyle = '#111114'; x.font = '700 120px Unbounded, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('G', 128, 175)
+    shield(0); x.fillStyle = '#121214'; x.fill()
+    shield(10); x.save(); x.clip()
+    const yg = x.createLinearGradient(0, 40, 0, 300); yg.addColorStop(0, '#ffd21a'); yg.addColorStop(1, '#e8b000')
+    x.fillStyle = yg; x.fillRect(0, 0, 256, 320)
+    ;['#159a48', '#f6f6f6', '#d9202f'].forEach((col, k) => { x.fillStyle = col; x.fillRect(44 + k * 56, 24, 56, 30) })
     x.restore()
     const tex = new THREE.CanvasTexture(c)
     tex.colorSpace = THREE.SRGBColorSpace
     tex.anisotropy = 8
-    const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.09), new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.5, metalness: 0.3, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05, polygonOffset: true, polygonOffsetFactor: -4 }))
+    const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.083), new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.5, metalness: 0.3, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05, polygonOffset: true, polygonOffsetFactor: -4 }))
     // щиток — на прежнее место знака, на носу капота (поверх заплатки)
     if (noseSpot) {
       const n = noseSpot.n
@@ -549,7 +547,8 @@ async function initScene(canvas, onProgress) {
       const up = back.sub(n.clone().multiplyScalar(n.dot(back))).normalize()
       const right = up.clone().cross(n)
       badge.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, n))
-      badge.position.copy(noseSpot.pos).addScaledVector(n, 0.003)
+      // чуть ниже прежнего — ближе к краю носа
+      badge.position.copy(noseSpot.pos).addScaledVector(up, -0.018).addScaledVector(n, 0.004)
       scene.add(badge)
     }
   }
