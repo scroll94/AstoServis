@@ -437,6 +437,120 @@ async function initScene(canvas, onProgress) {
     scene.add(bridge, lower)
   }
 
+  // знак на капоте: в модели это плоский жёлтый квадратик на самом носу — убираем его и ставим аккуратный щиток выше на капоте
+  {
+    // вырезаем треугольники детали, чей центр попадает под условие
+    const cut = (name, drop) => {
+      const m = car.getObjectByName(name)
+      if (!m) return
+      m.updateMatrixWorld(true)
+      const g = m.geometry, pos = g.attributes.position
+      const src = g.index ? g.index.array : [...Array(pos.count).keys()]
+      const keep = []
+      const v = new THREE.Vector3(), cc = new THREE.Vector3()
+      for (let t = 0; t < src.length; t += 3) {
+        cc.set(0, 0, 0)
+        for (let k = 0; k < 3; k++) cc.add(v.fromBufferAttribute(pos, src[t + k]).applyMatrix4(m.matrixWorld))
+        cc.divideScalar(3)
+        if (!drop(cc)) keep.push(src[t], src[t + 1], src[t + 2])
+      }
+      g.setIndex(keep)
+    }
+    const nose = new THREE.Vector3(0, 0.6, 2.08 * F)
+    cut('yellow_trim', (p) => p.z * F > 1.8) // жёлтый квадратик
+    cut('chrome', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07) // хромовая рамка под ним
+    cut('interior_dark', (p) => Math.abs(p.x) < 0.06 && p.distanceTo(nose) < 0.07)
+    // под квадратиком в кузове дыра — закрываем заплаткой той же краской
+    {
+      // меряем капот по кольцу вокруг ямки и подбираем гладкую поверхность y = a + bx + cz + dx² + ez² + fxz
+      const bodyM = car.getObjectByName('body')
+      const cx = 0, cz = 2.08 * F
+      const samples = []
+      for (const rr of [0.07, 0.09]) for (let k = 0; k < 24; k++) {
+        const a = (k / 24) * Math.PI * 2, px = cx + Math.cos(a) * rr, pz = cz + Math.sin(a) * rr
+        const h = new THREE.Raycaster(new THREE.Vector3(px, 3, pz), new THREE.Vector3(0, -1, 0)).intersectObject(bodyM, true)[0]
+        if (h) samples.push([px - cx, pz - cz, h.point.y])
+      }
+      if (samples.length >= 12) {
+        const A = Array.from({ length: 6 }, () => new Array(7).fill(0))
+        for (const [x, z, y] of samples) {
+          const r = [1, x, z, x * x, z * z, x * z]
+          for (let i = 0; i < 6; i++) { for (let j = 0; j < 6; j++) A[i][j] += r[i] * r[j]; A[i][6] += r[i] * y }
+        }
+        for (let i = 0; i < 6; i++) { // метод Гаусса
+          let p = i
+          for (let j = i + 1; j < 6; j++) if (Math.abs(A[j][i]) > Math.abs(A[p][i])) p = j
+          ;[A[i], A[p]] = [A[p], A[i]]
+          for (let j = 0; j < 6; j++) if (j !== i) { const f = A[j][i] / A[i][i]; for (let k = i; k < 7; k++) A[j][k] -= f * A[i][k] }
+        }
+        const c = A.map((row, i) => row[6] / row[i])
+        const surfY = (x, z) => c[0] + c[1] * x + c[2] * z + c[3] * x * x + c[4] * z * z + c[5] * x * z
+        // гладкие нормали кузова по кольцу (как их видит освещение) — для выровненных вершин берём среднее с весами по расстоянию
+        const ringN = []
+        const tri = new THREE.Triangle(), na = new THREE.Vector3(), nb = new THREE.Vector3(), nc = new THREE.Vector3()
+        const bg = bodyM.geometry, bp = bg.attributes.position, bn = bg.attributes.normal
+        for (const rr of [0.065, 0.08]) for (let k = 0; k < 24; k++) {
+          const a = (k / 24) * Math.PI * 2, px = cx + Math.cos(a) * rr, pz = cz + Math.sin(a) * rr
+          const h = new THREE.Raycaster(new THREE.Vector3(px, 3, pz), new THREE.Vector3(0, -1, 0)).intersectObject(bodyM, false)[0]
+          if (!h || !bn) continue
+          const lp = bodyM.worldToLocal(h.point.clone())
+          tri.set(new THREE.Vector3().fromBufferAttribute(bp, h.face.a), new THREE.Vector3().fromBufferAttribute(bp, h.face.b), new THREE.Vector3().fromBufferAttribute(bp, h.face.c))
+          const ln = THREE.Triangle.getInterpolation(lp, tri.a, tri.b, tri.c, na.fromBufferAttribute(bn, h.face.a), nb.fromBufferAttribute(bn, h.face.b), nc.fromBufferAttribute(bn, h.face.c), new THREE.Vector3()).normalize()
+          ringN.push({ x: px, z: pz, n: ln })
+        }
+        // заплатка по форме капота; нормали берём с кузова вокруг, чтобы блики шли без шва
+        const geo = new THREE.CircleGeometry(0.06, 48)
+        geo.rotateX(-Math.PI / 2)
+        const pa = geo.attributes.position
+        const nrm = geo.attributes.normal
+        const toWorldN = new THREE.Matrix3().getNormalMatrix(bodyM.matrixWorld)
+        for (let i = 0; i < pa.count; i++) {
+          const x = pa.getX(i), z = pa.getZ(i)
+          pa.setY(i, surfY(x, z) + 0.0008)
+          const acc = new THREE.Vector3()
+          for (const s of ringN) { const d = Math.hypot(s.x - (x + cx), s.z - (z + cz)) + 1e-4; acc.addScaledVector(s.n, 1 / (d * d)) }
+          acc.applyMatrix3(toWorldN).normalize()
+          nrm.setXYZ(i, acc.x, acc.y, acc.z)
+        }
+        const patch = new THREE.Mesh(geo, paint)
+        patch.position.set(cx, 0, cz)
+        scene.add(patch)
+      }
+    }
+    // щиток рисуем на canvas: жёлтое поле, триколор сверху, тёмная окантовка
+    const c = document.createElement('canvas')
+    c.width = 256; c.height = 320
+    const x = c.getContext('2d')
+    const shield = (inset) => {
+      x.beginPath()
+      x.moveTo(20 + inset, 20 + inset); x.lineTo(236 - inset, 20 + inset); x.lineTo(236 - inset, 190 - inset * 0.4)
+      x.quadraticCurveTo(236 - inset, 260 - inset, 128, 304 - inset * 1.4)
+      x.quadraticCurveTo(20 + inset, 260 - inset, 20 + inset, 190 - inset * 0.4); x.closePath()
+    }
+    shield(0); x.fillStyle = '#111114'; x.fill()
+    shield(12); x.save(); x.clip()
+    x.fillStyle = '#f6c400'; x.fillRect(0, 0, 256, 320)
+    ;['#14a04a', '#f4f4f4', '#d81e2c'].forEach((col, i) => { x.fillStyle = col; x.fillRect(32 + i * 64, 32, 64, 34) })
+    x.fillStyle = '#111114'; x.font = '700 120px Unbounded, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('G', 128, 175)
+    x.restore()
+    const tex = new THREE.CanvasTexture(c)
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.anisotropy = 8
+    const badge = new THREE.Mesh(new THREE.PlaneGeometry(0.088, 0.11), new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.5, metalness: 0.3, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05, polygonOffset: true, polygonOffsetFactor: -4 }))
+    // ставим на поверхность капота: ищем точку и нормаль лучом сверху
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 3, 1.85 * F), new THREE.Vector3(0, -1, 0))
+    const hit = ray.intersectObject(car.getObjectByName('body'), true)[0]
+    if (hit) {
+      const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
+      const back = new THREE.Vector3(0, 0, -F)
+      const up = back.sub(n.clone().multiplyScalar(n.dot(back))).normalize()
+      const right = up.clone().cross(n)
+      badge.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, n))
+      badge.position.copy(hit.point).addScaledVector(n, 0.002)
+      scene.add(badge)
+    }
+  }
+
   // подкрылки: в арках модели дыры и щели — закрываем тёмным пластиковым подкрылком и глухой стенкой изнутри
   const linerMat = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, roughness: 0.85, metalness: 0, side: THREE.DoubleSide })
   wheels.forEach((w, i) => {
