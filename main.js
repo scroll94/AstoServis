@@ -346,8 +346,8 @@ async function initScene(canvas, onProgress) {
   // ── салон как в настоящих машинах
   // материал «карбон» в модели без текстуры и рисовался светлым кольцом за рулём («второй руль») — делаем тёмный глянцевый карбон
   const carbon = new THREE.MeshPhysicalMaterial({ color: 0x141518, metalness: 0.4, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.15 })
-  // сиденья и двери — светлая кремовая кожа, панель и руль — тёмные (как в салоне McLaren)
-  const recolor = { Leather: [0xe8dfcf, 0.6], Leather_red: [0xcfc4b1, 0.6], Interior_light: [0xded7ca, 0.65], Interior_dark: [0x2a2b30, 0.6], Carpet: [0x1d1d21, 0.9] }
+  // сиденья, двери и тоннель — коньячная кожа, панель, пол и руль — тёмные (как в салоне McLaren)
+  const recolor = { Leather: [0x8c4f2a, 0.55], Leather_red: [0x744122, 0.55], Interior_light: [0x26272b, 0.6], Interior_dark: [0x1b1c1f, 0.6], Carpet: [0x141416, 0.9] }
   const inWheel = (o) => { for (let p = o; p; p = p.parent) if (p.name === 'steering_wheel') return true; return false }
   car.traverse((o) => {
     if (!o.isMesh || !o.material) return
@@ -371,37 +371,49 @@ async function initScene(canvas, onProgress) {
     t.anisotropy = 4
     return t
   }
-  const cluster = screenTex(640, 240, (g, w, h) => {
+  // как в Ferrari 458: жёлтый тахометр модели по центру, по бокам два экрана
+  const clusterL = screenTex(300, 220, (g, w, h) => {
     g.fillStyle = '#05070b'; g.fillRect(0, 0, w, h)
-    g.lineWidth = 14; g.lineCap = 'round'
-    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.beginPath(); g.arc(w / 2, h * 0.95, 160, Math.PI * 1.1, Math.PI * 1.9); g.stroke()
-    g.strokeStyle = '#ff2d3d'; g.beginPath(); g.arc(w / 2, h * 0.95, 160, Math.PI * 1.1, Math.PI * 1.35); g.stroke()
-    g.fillStyle = '#ffffff'; g.font = '700 84px Unbounded, Arial'; g.textAlign = 'center'; g.fillText('0', w / 2, h * 0.72)
-    g.fillStyle = '#9aa0aa'; g.font = '500 22px Manrope, Arial'; g.fillText('км/ч', w / 2, h * 0.86)
-    g.fillStyle = '#ff2d3d'; g.font = '700 46px Unbounded, Arial'; g.fillText('N', w * 0.86, h * 0.62)
-    g.fillStyle = '#9aa0aa'; g.font = '500 20px Manrope, Arial'; g.textAlign = 'left'; g.fillText('21 °C   GLOSS', 24, 40)
-    g.textAlign = 'right'; g.fillText('12:00', w - 24, 40)
+    g.lineWidth = 12; g.lineCap = 'round'
+    g.strokeStyle = 'rgba(255,255,255,0.12)'; g.beginPath(); g.arc(w / 2, h * 0.7, 90, Math.PI * 0.8, Math.PI * 2.2); g.stroke()
+    g.strokeStyle = '#ff2d3d'; g.beginPath(); g.arc(w / 2, h * 0.7, 90, Math.PI * 0.8, Math.PI * 1.1); g.stroke()
+    g.fillStyle = '#ffffff'; g.font = '700 64px Unbounded, Arial'; g.textAlign = 'center'; g.fillText('0', w / 2, h * 0.72)
+    g.fillStyle = '#9aa0aa'; g.font = '500 20px Manrope, Arial'; g.fillText('км/ч', w / 2, h * 0.88)
   })
-  const center = screenTex(420, 300, (g, w, h) => {
+  const clusterR = screenTex(300, 220, (g, w, h) => {
+    g.fillStyle = '#05070b'; g.fillRect(0, 0, w, h)
+    g.fillStyle = '#ff2d3d'; g.font = '700 80px Unbounded, Arial'; g.textAlign = 'center'; g.fillText('N', w / 2, h * 0.62)
+    g.fillStyle = '#9aa0aa'; g.font = '500 20px Manrope, Arial'; g.textAlign = 'left'; g.fillText('21 °C', 22, 36)
+    g.textAlign = 'right'; g.fillText('12:00', w - 22, 36)
+    g.textAlign = 'center'; g.fillStyle = '#e8e8ee'; g.font = '600 20px Manrope, Arial'; g.fillText('GLOSS', w / 2, h * 0.88)
+  })
+  // вертикальный планшет по центру, как у McLaren
+  const center = screenTex(300, 420, (g, w, h) => {
     g.fillStyle = '#06080d'; g.fillRect(0, 0, w, h)
     const grd = g.createLinearGradient(0, 0, w, h); grd.addColorStop(0, '#1b0a0e'); grd.addColorStop(1, '#0b0f18')
-    g.fillStyle = grd; g.fillRect(10, 10, w - 20, h - 76)
+    g.fillStyle = grd; g.fillRect(10, 96, w - 20, h - 180)
     g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 2
-    for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(10 + i * 50, 10); g.lineTo(10 + i * 50 - 40, h - 66); g.stroke() }
-    g.strokeStyle = '#ff2d3d'; g.lineWidth = 6; g.beginPath(); g.moveTo(60, h - 90); g.bezierCurveTo(140, 140, 260, 200, 360, 40); g.stroke()
-    g.fillStyle = '#ffffff'; g.font = '700 26px Manrope, Arial'; g.fillText('Детейлинг GLOSS', 30, 48)
-    g.fillStyle = '#9aa0aa'; g.font = '500 18px Manrope, Arial'; g.fillText('Алматы · 4 мин', 30, 76)
-    ;['❄', '♫', '⚙', '☎'].forEach((s, i) => { g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(16 + i * 100, h - 56, 88, 44); g.fillStyle = '#e8e8ee'; g.font = '24px Arial'; g.textAlign = 'center'; g.fillText(s, 60 + i * 100, h - 26); g.textAlign = 'left' })
+    for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(10 + i * 45, 96); g.lineTo(10 + i * 45 - 60, h - 84); g.stroke() }
+    g.strokeStyle = '#ff2d3d'; g.lineWidth = 6; g.beginPath(); g.moveTo(50, h - 100); g.bezierCurveTo(90, 250, 220, 260, 240, 120); g.stroke()
+    g.fillStyle = '#ffffff'; g.font = '700 24px Manrope, Arial'; g.fillText('Детейлинг GLOSS', 20, 40)
+    g.fillStyle = '#9aa0aa'; g.font = '500 17px Manrope, Arial'; g.fillText('Алматы · 4 мин', 20, 70)
+    ;['❄', '♫', '⚙', '☎'].forEach((s, i) => { g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(12 + i * 70, h - 70, 62, 56); g.fillStyle = '#e8e8ee'; g.font = '24px Arial'; g.textAlign = 'center'; g.fillText(s, 43 + i * 70, h - 33); g.textAlign = 'left' })
   })
   const screenMat = (t) => new THREE.MeshBasicMaterial({ map: t, toneMapped: false })
   const driverEye = steer.clone().add(new THREE.Vector3(0, 0.3, -F * 0.6))
-  const clusterMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.11), screenMat(cluster))
-  clusterMesh.position.copy(steer).add(new THREE.Vector3(0, 0.07, F * 0.2))
-  clusterMesh.lookAt(driverEye)
-  scene.add(clusterMesh)
-  const centerMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.143), screenMat(center))
-  centerMesh.position.set(0, steer.y - 0.02, steer.z + F * 0.16)
-  centerMesh.lookAt(new THREE.Vector3(0, steer.y + 0.35, steer.z - F * 0.7))
+  // приборка — прямо на козырьке за рулём (деталь carbon_fibre), видна сквозь обод, как в настоящей машине
+  ;[[clusterL, -0.105], [clusterR, 0.105]].forEach(([tex, dx]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.074), screenMat(tex))
+    m.position.copy(steer).add(new THREE.Vector3(dx, 0.04, F * 0.092))
+    m.lookAt(driverEye.clone().setX(steer.x + dx))
+    scene.add(m)
+  })
+  // планшет стоит на центральной консоли и слегка наклонён назад
+  const centerMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.14), screenMat(center))
+  centerMesh.position.set(0, steer.y + 0.005, steer.z + F * 0.185)
+  centerMesh.rotation.y = F < 0 ? 0 : Math.PI
+  centerMesh.rotateY(-0.12)
+  centerMesh.rotateX(-0.7)
   scene.add(centerMesh)
 
   // ── маршрут камеры: ключевые точки с долей прокрутки u; s — можно отодвигать на узких экранах
